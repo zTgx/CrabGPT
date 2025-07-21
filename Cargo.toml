@@ -1,0 +1,19 @@
+[package]
+name = "crabgpt"
+version = "0.1.0"
+edition = "2024"
+description = "Transformer Architecture with Rust and Candle"
+license = "MIT"
+repository = "https://github.com/zTgx/CrabGPT"
+readme = "README.md"
+keywords = ["llama", "inference", "llm", "rust"]
+
+[dependencies]
+# clap = { version = "4.5", features = ["derive"] }
+anyhow = "1.0"
+candle-core = { version = "0.9.1", features = ["cuda"] }
+# candle-transformers = { version = "0.9.1" }
+candle-nn = "0.9.1"
+tokenizers = { version = "0.21.2", features = ["http"] }
+# hf-hub = "0.4.1"
+serde_json = "1.0.99"
