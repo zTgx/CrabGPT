@@ -149,9 +149,8 @@ mod tests {
         let d_model = 768;
 
         let pe = PositionEncoding::pos_encoding(sequence_len, d_model, &device)?;
-        // assert_eq!(pe.shape().dims2(), &[sequence_len, d_model]);
+        assert_eq!(pe.shape().dims2().unwrap(), (sequence_len, d_model));
 
-        println!("shape: {:#?}", pe.shape());
         Ok(())
     }
 
@@ -160,7 +159,6 @@ mod tests {
         let device = Device::Cpu;
         let pe = PositionEncoding::pos_encoding(10, 8, &device)?;
         assert_eq!(pe.shape().dims(), &[10, 8]);
-        println!("PE:\n{}", pe);
         Ok(())
     }
 }
