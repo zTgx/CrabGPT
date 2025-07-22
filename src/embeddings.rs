@@ -1,5 +1,5 @@
 use {
-    candle_core::{Result, Tensor},
+    candle_core::Result,
     candle_nn::{Embedding, VarBuilder, embedding},
 };
 
