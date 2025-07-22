@@ -1,9 +1,6 @@
 use {
-    crate::{
-        attention::MultiHeadAttention,
-        forward::FeedForward,
-    },
-    candle_core::{ModuleT, Module, Result, Tensor},
+    crate::{attention::MultiHeadAttention, forward::FeedForward},
+    candle_core::{Module, ModuleT, Result, Tensor},
     candle_nn::{LayerNorm, VarBuilder},
 };
 
@@ -26,7 +23,15 @@ impl TransformerBlock {
     ) -> Result<Self> {
         let ln1 = candle_nn::layer_norm(in_dim, 1e-5, vb.pp("ln_1"))?;
         let ln2 = candle_nn::layer_norm(in_dim, 1e-5, vb.pp("ln_2"))?;
-        let attn = MultiHeadAttention::new(in_dim, in_dim, context_length, drop_p, num_heads, vb.pp("attn"), true)?;
+        let attn = MultiHeadAttention::new(
+            in_dim,
+            in_dim,
+            context_length,
+            drop_p,
+            num_heads,
+            vb.pp("attn"),
+            true,
+        )?;
         let ff = FeedForward::new(in_dim, drop_p, vb.pp("ff"))?;
         Ok(Self { attn, ff, ln1, ln2 })
     }
@@ -70,10 +75,33 @@ impl DecoderBlock {
         let ln1 = candle_nn::layer_norm(in_dim, 1e-5, vb.pp("ln_1"))?;
         let ln2 = candle_nn::layer_norm(in_dim, 1e-5, vb.pp("ln_2"))?;
         let ln3 = candle_nn::layer_norm(in_dim, 1e-5, vb.pp("ln_3"))?;
-        let masked_attn = MultiHeadAttention::new(in_dim, in_dim, context_length, drop_p, num_heads, vb.pp("masked_attn"), true)?;
-        let cross_attn = MultiHeadAttention::new(in_dim, in_dim, context_length, drop_p, num_heads, vb.pp("cross_attn"), true)?;
+        let masked_attn = MultiHeadAttention::new(
+            in_dim,
+            in_dim,
+            context_length,
+            drop_p,
+            num_heads,
+            vb.pp("masked_attn"),
+            true,
+        )?;
+        let cross_attn = MultiHeadAttention::new(
+            in_dim,
+            in_dim,
+            context_length,
+            drop_p,
+            num_heads,
+            vb.pp("cross_attn"),
+            true,
+        )?;
         let ff = FeedForward::new(in_dim, drop_p, vb.pp("ff"))?;
-        Ok(Self { masked_attn, cross_attn, ff, ln1, ln2, ln3 })
+        Ok(Self {
+            masked_attn,
+            cross_attn,
+            ff,
+            ln1,
+            ln2,
+            ln3,
+        })
     }
 
     pub fn forward_t(&self, xs: &Tensor, encoder_output: &Tensor, train: bool) -> Result<Tensor> {
@@ -88,13 +116,16 @@ impl DecoderBlock {
         let residual = &x;
         let x_norm = self.ln2.forward(&x)?;
         // This uses the new forward_cross method
-        let x = self.cross_attn.forward_cross(&x_norm, encoder_output, train)?;
+        let x = self
+            .cross_attn
+            .forward_cross(&x_norm, encoder_output, train)?;
         let x = (x + residual)?;
 
         // 3. Feed-Forward
         let residual = &x;
         let x = self.ln3.forward(&x)?;
         let x = self.ff.forward_t(&x, train)?;
-        (x + residual)
+
+        x + residual
     }
 }

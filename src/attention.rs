@@ -83,7 +83,8 @@ impl MultiHeadAttention {
 
         // Scaled dot-product attention. No causal mask is needed for cross-attention.
         let scaling_factor = 1. / (self.head_dim as f64).sqrt();
-        let attn_scores = (queries.matmul(&keys.transpose(D::Minus2, D::Minus1)?)? * scaling_factor)?;
+        let attn_scores =
+            (queries.matmul(&keys.transpose(D::Minus2, D::Minus1)?)? * scaling_factor)?;
         let mut attn_weights = softmax(&attn_scores, D::Minus1)?;
 
         attn_weights = self.dropout.forward_t(&attn_weights, train)?;
