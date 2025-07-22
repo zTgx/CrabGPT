@@ -233,6 +233,7 @@ dependencies = [
  "anyhow",
  "candle-core",
  "candle-nn",
+ "serde",
  "serde_json",
  "tokenizers",
 ]
