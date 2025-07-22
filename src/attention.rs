@@ -26,7 +26,10 @@ impl MultiHeadAttention {
         vb: VarBuilder,
         qkv_bias: bool,
     ) -> Result<Self> {
-        assert!(out_dim % num_heads != 0);
+        assert!(
+            out_dim % num_heads == 0,
+            "out_dim must be divisible by num_heads"
+        );
 
         let head_dim = out_dim / num_heads;
 

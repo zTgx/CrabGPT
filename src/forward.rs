@@ -62,7 +62,39 @@ impl Module for FeedForward {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use candle_core::DType;
+    use candle_core::Device;
+    use candle_nn::VarBuilder;
+    use candle_nn::VarMap;
 
     #[test]
-    fn ff_works() {}
+    fn ff_works() {
+        let device = Device::Cpu;
+
+        let w1b1 = VarMap::new();
+        let vb = VarBuilder::from_varmap(&w1b1, DType::F32, &device);
+
+        let in_dim = 768;
+        let drop_p = 0.1;
+        let ff_layer = FeedForward::new(in_dim, drop_p, vb).unwrap();
+
+        let xs = Tensor::randn(0f32, 1f32, (2, 3, 768), &device).unwrap();
+
+        let ys = ff_layer.forward(&xs).unwrap();
+
+        assert_eq!(ys.shape().dims(), &[2, 3, 768]);
+    }
+
+    #[test]
+    fn ff_2_works() {
+        let device = Device::Cpu;
+
+        let w1b1 = VarMap::new();
+        let vb = VarBuilder::from_varmap(&w1b1, DType::F32, &device);
+
+        let ff = FeedForward::new(768, 0.3, vb).unwrap();
+        ff.layers.iter().for_each(|layer| {
+            println!("Layer: {:#?}\n", layer);
+        });
+    }
 }
