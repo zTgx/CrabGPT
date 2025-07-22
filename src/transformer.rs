@@ -4,14 +4,14 @@ use {
     candle_nn::{LayerNorm, VarBuilder},
 };
 
-pub struct TransformerBlock {
+pub struct EncodeBlock {
     attn: MultiHeadAttention,
     ff: FeedForward,
     ln1: LayerNorm,
     ln2: LayerNorm,
 }
 
-impl TransformerBlock {
+impl EncodeBlock {
     // Simplified new function for demonstration.
     // A real implementation would take a detailed config struct.
     pub fn new(
@@ -37,7 +37,7 @@ impl TransformerBlock {
     }
 }
 
-impl ModuleT for TransformerBlock {
+impl ModuleT for EncodeBlock {
     fn forward_t(&self, xs: &Tensor, train: bool) -> Result<Tensor> {
         // Pre-LN architecture
         // First residual connection

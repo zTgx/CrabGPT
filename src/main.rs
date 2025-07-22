@@ -2,7 +2,7 @@ use candle_core::{DType, Device, Result, Tensor};
 use candle_nn::{Module, ModuleT, VarBuilder, VarMap};
 use crabgpt::{
     embeddings::{InputEmbedding, InputEmbeddingConfig},
-    transformer::{DecoderBlock, TransformerBlock},
+    transformer::{DecoderBlock, EncodeBlock},
 };
 
 fn main() -> Result<()> {
@@ -29,7 +29,7 @@ fn main() -> Result<()> {
     let tgt_embedding = InputEmbedding::new(embed_config, vb.pp("tgt_embeddings"))?;
 
     // 4. 构建 Encoder 和 Decoder 块
-    let encoder = TransformerBlock::new(
+    let encoder = EncodeBlock::new(
         embedding_dim,
         num_heads,
         context_length,
