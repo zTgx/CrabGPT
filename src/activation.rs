@@ -3,19 +3,21 @@ use {
     candle_nn::{Module, activation::Activation},
 };
 
-pub struct LayerActivation(Activation);
+#[derive(Clone, Debug)]
+pub enum LayerActivation {
+    Activation(Activation),
+}
+
 impl LayerActivation {
     pub fn new(activation: Activation) -> Self {
-        Self(activation)
-    }
-
-    pub fn activation(&self) -> &Activation {
-        &self.0
+        LayerActivation::Activation(activation)
     }
 }
 
 impl Module for LayerActivation {
     fn forward(&self, xs: &Tensor) -> Result<Tensor> {
-        self.0.forward(xs)
+        match self {
+            LayerActivation::Activation(a) => a.forward(xs),
+        }
     }
 }
