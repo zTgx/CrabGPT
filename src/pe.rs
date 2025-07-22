@@ -12,6 +12,7 @@ pub enum PositionEmbeddingType {
     Relative,
 }
 
+#[derive(Debug, Clone)]
 pub struct PositionEncodingConfig {
     pub max_position_embeddings: usize,
     pub embedding_dim: usize,
@@ -51,25 +52,31 @@ impl Default for PositionEncodingConfig {
 /// - pos     : token 在序列中的位置
 /// - i       : 维度索引
 /// - d_model : 模型的 embedding dim
+
+#[derive(Debug, Clone)]
 pub struct PositionEncoding {
     pub config: PositionEncodingConfig,
     pub pos_embedding: Tensor,
 }
 
 impl PositionEncoding {
-    pub fn new(config: PositionEncodingConfig) -> Result<Self> {
-        let dev = Device::cuda_if_available(0)?;
-
+    pub fn new(config: PositionEncodingConfig, device: &Device) -> Result<Self> {
         let pos_embedding = PositionEncoding::pos_encoding(
             config.max_position_embeddings,
             config.embedding_dim,
-            &dev,
+            device,
         )?;
 
         Ok(Self {
             config,
             pos_embedding,
         })
+    }
+
+    pub fn forward(&self, seq_len: usize) -> Result<Tensor> {
+        // self.pos_embedding is of shape (max_len, d_model)
+        // We need to return the slice for the current sequence length.
+        self.pos_embedding.narrow(0, 0, seq_len)
     }
 
     fn pos_encoding(sequence_len: usize, d_model: usize, device: &Device) -> Result<Tensor> {
