@@ -4,6 +4,7 @@ use {
     candle_nn::{Embedding, Module, VarBuilder, embedding},
 };
 
+#[derive(Debug, Clone)]
 pub struct InputEmbeddingConfig {
     pub vocab_size: usize,
     pub embedding_dim: usize,
@@ -43,12 +44,16 @@ impl Module for InputEmbedding {
     fn forward(&self, xs: &Tensor) -> Result<Tensor> {
         // Get the sequence length from the input tensor shape
         let (_batch_size, seq_len) = xs.dims2()?;
+        println!("BatchSize: {}, seqLen: {}", _batch_size, seq_len);
 
         // Get token embeddings and positional embeddings
         let token_embeddings = self.token_embedding_layer.forward(xs)?;
+        println!("token_embeddings shape: {:#?}", token_embeddings.shape());
+
         let pos_embeddings = self.pos_encoding_layer.forward(seq_len)?;
+        println!("pos_embeddings shape: {:#?}", pos_embeddings.shape());
 
         // Add them together
-        token_embeddings.add(&pos_embeddings)
+        token_embeddings.broadcast_add(&pos_embeddings)
     }
 }
