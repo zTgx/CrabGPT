@@ -54,6 +54,49 @@ impl MultiHeadAttention {
     }
 }
 
+impl MultiHeadAttention {
+    /// A forward pass for cross-attention.
+    /// - `xs`: The tensor for queries (from the decoder).
+    /// - `kv_xs`: The tensor for keys and values (from the encoder).
+    pub fn forward_cross(&self, xs: &Tensor, kv_xs: &Tensor, train: bool) -> Result<Tensor> {
+        let (b, num_tokens_q, _d_in) = xs.dims3()?;
+        let (_b, num_tokens_kv, _d_in) = kv_xs.dims3()?;
+
+        // Calculate Q from decoder input, K and V from encoder output.
+        let queries = self.w_query.forward_t(xs, train)?;
+        let keys = self.w_key.forward_t(kv_xs, train)?;
+        let values = self.w_value.forward_t(kv_xs, train)?;
+
+        // Reshape and transpose for multi-head attention.
+        let queries = queries
+            .reshape((b, num_tokens_q, self.num_heads, self.head_dim))?
+            .transpose(1, 2)?
+            .contiguous()?;
+        let keys = keys
+            .reshape((b, num_tokens_kv, self.num_heads, self.head_dim))?
+            .transpose(1, 2)?
+            .contiguous()?;
+        let values = values
+            .reshape((b, num_tokens_kv, self.num_heads, self.head_dim))?
+            .transpose(1, 2)?
+            .contiguous()?;
+
+        // Scaled dot-product attention. No causal mask is needed for cross-attention.
+        let scaling_factor = 1. / (self.head_dim as f64).sqrt();
+        let attn_scores = (queries.matmul(&keys.transpose(D::Minus2, D::Minus1)?)? * scaling_factor)?;
+        let mut attn_weights = softmax(&attn_scores, D::Minus1)?;
+
+        attn_weights = self.dropout.forward_t(&attn_weights, train)?;
+
+        let context_vec = attn_weights.matmul(&values)?.transpose(1, 2)?;
+        let context_vec = context_vec
+            .reshape((b, num_tokens_q, self.out_dim))?
+            .contiguous()?;
+
+        self.out_proj.forward_t(&context_vec, train)
+    }
+}
+
 impl ModuleT for MultiHeadAttention {
     fn forward_t(&self, xs: &Tensor, train: bool) -> Result<Tensor> {
         // batch, seq_len, d_in
@@ -85,7 +128,7 @@ impl ModuleT for MultiHeadAttention {
         let attn_scores = queries.matmul(&keys.transpose(D::Minus2, D::Minus1)?)?;
 
         // Apply Mask
-        let mask = get_mask(num_tokens, xs.device())?;
+        let mask = get_causal_mask(num_tokens, xs.device())?;
 
         // Use the mask to fill attention scores
         let masked = masked_fill(
@@ -123,7 +166,7 @@ pub fn masked_fill(on_false: &Tensor, mask: &Tensor, on_true: f32) -> Result<Ten
     Ok(m)
 }
 
-pub fn get_mask(size: usize, device: &Device) -> Result<Tensor> {
+pub fn get_causal_mask(size: usize, device: &Device) -> Result<Tensor> {
     let mask: Vec<_> = (0..size)
         .flat_map(|i| (0..size).map(move |j| u32::from(j > i)))
         .collect();
