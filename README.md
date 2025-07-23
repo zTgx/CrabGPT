@@ -1,5 +1,12 @@
-# CrabGPT
-CrabGPT Is All You Need. 🦀
+# Transformer-rust
 
-* The Transformer Model Architecture
-![The Transformer Model Architecture](./The_Transformer_Model_Architecture.png)
+* Rust
+* Candle
+* Transformer
+
+## Example
+```bash
+cargo run
+```
+
+![The Transformer Model Architecture](./docs/The_Transformer_Model_Architecture.png)
