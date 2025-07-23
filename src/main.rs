@@ -2,15 +2,16 @@ use candle_core::{DType, Device, Result, Tensor};
 use candle_nn::{Module, ModuleT, VarBuilder, VarMap};
 use transformer_rust::{
     embeddings::{InputEmbedding, InputEmbeddingConfig},
+    pe::{PositionEmbeddingType, PositionEncoding, PositionEncodingConfig},
     transformer::{DecoderBlock, EncodeBlock},
 };
 
 fn main() -> Result<()> {
     // 1. initialize
     let device = Device::Cpu;
-    let vocab_size = 10000;
-    let embedding_dim = 768;
-    let max_position_embeddings = 10000;
+    let vocab_size = 100;
+    let embedding_dim = 12;
+    let max_position_embeddings = 100;
     let num_heads = 12;
     let context_length = 32;
     let drop_p = 0.1;
@@ -28,7 +29,15 @@ fn main() -> Result<()> {
     let src_embedding = InputEmbedding::new(embed_config.clone(), vb.pp("src_embeddings"))?;
     let tgt_embedding = InputEmbedding::new(embed_config, vb.pp("tgt_embeddings"))?;
 
-    // 4. Encoder 和 Decoder
+    let config = PositionEncodingConfig::new(
+        max_position_embeddings,
+        embedding_dim,
+        PositionEmbeddingType::Absolute,
+    );
+    let src_pe_embedding = PositionEncoding::new(config.clone(), &device)?;
+    let tgt_pe_embedding = PositionEncoding::new(config.clone(), &device)?;
+
+    // 4. Encoder & Decoder
     let encoder = EncodeBlock::new(
         embedding_dim,
         num_heads,
@@ -53,14 +62,19 @@ fn main() -> Result<()> {
 
     // 6. encoder output
     let src_embedded = src_embedding.forward(&src_ids)?;
+    let src_pe_embedded = src_pe_embedding.forward(context_length)?;
+    let src_embedded = src_embedded.broadcast_add(&src_pe_embedded)?;
+
     let encoder_output = encoder.forward_t(&src_embedded, true)?;
-    // [2, 32, 768]
+    let tgt_pe_embedded = tgt_pe_embedding.forward(context_length)?;
+    let encoder_output = encoder_output.broadcast_add(&tgt_pe_embedded)?;
+
     println!("Encoder output shape: {:?}", encoder_output.shape());
 
     // 7. decoder output
     let tgt_embedded = tgt_embedding.forward(&tgt_ids)?;
     let decoder_output = decoder.forward_t(&tgt_embedded, &encoder_output, true)?;
-    // [2, 32, 768]
+
     println!("Decoder output shape: {:?}", decoder_output.shape());
 
     Ok(())
