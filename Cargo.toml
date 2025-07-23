@@ -1,5 +1,5 @@
 [package]
-name = "crabgpt"
+name = "transfomer-rust"
 version = "0.1.0"
 edition = "2024"
 description = "Transformer Architecture with Rust and Candle"

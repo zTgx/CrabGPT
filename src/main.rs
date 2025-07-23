@@ -1,6 +1,6 @@
 use candle_core::{DType, Device, Result, Tensor};
 use candle_nn::{Module, ModuleT, VarBuilder, VarMap};
-use crabgpt::{
+use transfomer_rust::{
     embeddings::{InputEmbedding, InputEmbeddingConfig},
     transformer::{DecoderBlock, EncodeBlock},
 };
