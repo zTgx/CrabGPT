@@ -12,8 +12,6 @@ pub struct EncodeBlock {
 }
 
 impl EncodeBlock {
-    // Simplified new function for demonstration.
-    // A real implementation would take a detailed config struct.
     pub fn new(
         in_dim: usize,
         num_heads: usize,
@@ -23,6 +21,7 @@ impl EncodeBlock {
     ) -> Result<Self> {
         let ln1 = candle_nn::layer_norm(in_dim, 1e-5, vb.pp("ln_1"))?;
         let ln2 = candle_nn::layer_norm(in_dim, 1e-5, vb.pp("ln_2"))?;
+
         let attn = MultiHeadAttention::new(
             in_dim,
             in_dim,
@@ -32,7 +31,9 @@ impl EncodeBlock {
             vb.pp("attn"),
             true,
         )?;
+
         let ff = FeedForward::new(in_dim, drop_p, vb.pp("ff"))?;
+        
         Ok(Self { attn, ff, ln1, ln2 })
     }
 }

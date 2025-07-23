@@ -1,8 +1,10 @@
 use candle_core::{DType, Device, Result, Tensor};
-use candle_nn::{Module, ModuleT, VarBuilder, VarMap};
+use candle_nn::{ModuleT, VarBuilder, VarMap};
 use transformer_rust::{
-    embeddings::{InputEmbedding, InputEmbeddingConfig},
-    pe::{PositionEmbeddingType, PositionEncoding, PositionEncodingConfig},
+    embeddings::{
+        InputEmbeddings, PositionEmbeddingType, PositionEncoding, PositionEncodingConfig,
+        TokenEmbedding, TokenEmbeddingConfig,
+    },
     transformer::{DecoderBlock, EncodeBlock},
 };
 
@@ -21,13 +23,13 @@ fn main() -> Result<()> {
     let vb = VarBuilder::from_varmap(&varmap, DType::F32, &device);
 
     // 3. embedding config
-    let embed_config = InputEmbeddingConfig {
+    let embed_config = TokenEmbeddingConfig {
         vocab_size,
         embedding_dim,
         max_position_embeddings,
     };
-    let src_embedding = InputEmbedding::new(embed_config.clone(), vb.pp("src_embeddings"))?;
-    let tgt_embedding = InputEmbedding::new(embed_config, vb.pp("tgt_embeddings"))?;
+    let src_embedding = TokenEmbedding::new(embed_config.clone(), vb.pp("src_embeddings"))?;
+    let tgt_embedding = TokenEmbedding::new(embed_config, vb.pp("tgt_embeddings"))?;
 
     let config = PositionEncodingConfig::new(
         max_position_embeddings,
@@ -61,20 +63,19 @@ fn main() -> Result<()> {
         Tensor::arange(0, (2 * context_length) as u32, &device)?.reshape((2, context_length))?;
 
     // 6. encoder output
-    let src_embedded = src_embedding.forward(&src_ids)?;
-    let src_pe_embedded = src_pe_embedding.forward(context_length)?;
-    let src_embedded = src_embedded.broadcast_add(&src_pe_embedded)?;
+    let src_embedded =
+        InputEmbeddings::new(src_embedding, src_pe_embedding)?.forward(&src_ids, context_length)?;
 
     let encoder_output = encoder.forward_t(&src_embedded, true)?;
     let tgt_pe_embedded = tgt_pe_embedding.forward(context_length)?;
     let encoder_output = encoder_output.broadcast_add(&tgt_pe_embedded)?;
-
     println!("Encoder output shape: {:?}", encoder_output.shape());
 
     // 7. decoder output
-    let tgt_embedded = tgt_embedding.forward(&tgt_ids)?;
-    let decoder_output = decoder.forward_t(&tgt_embedded, &encoder_output, true)?;
+    let tgt_embedded =
+        InputEmbeddings::new(tgt_embedding, tgt_pe_embedding)?.forward(&tgt_ids, context_length)?;
 
+    let decoder_output = decoder.forward_t(&tgt_embedded, &encoder_output, true)?;
     println!("Decoder output shape: {:?}", decoder_output.shape());
 
     Ok(())
