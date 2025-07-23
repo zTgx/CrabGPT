@@ -71,38 +71,6 @@ impl PositionEncoding {
         Ok(Self { config, embedding })
     }
 
-    pub fn forward(&self, seq_len: usize) -> Result<Tensor> {
-        // self.embedding is of shape (max_len, d_model)
-        // We need to return the slice for the current sequence length.
-        self.embedding.narrow(0, 0, seq_len)
-    }
-
-    // fn pos_encoding(sequence_len: usize, d_model: usize, device: &Device) -> Result<Tensor> {
-    //     // 在维度 1 上增加一个新维度，将其形状变为 (sequence_len, 1), 现在，它变成了一个列向量（一个只有一列的矩阵）.
-    //     let position = Tensor::arange(0u32, sequence_len as u32, device)?
-    //         .to_dtype(DType::F32)? //eg. shape: (4) -> [0., 1.0, 2.0, 3.0]
-    //         .unsqueeze(1)?; //eg. shape: (4,1) -> [[0.],
-    //     //  [1.0],
-    //     //  [2.0],
-    //     //  [3.0]]
-
-    //     // Calculate div_term directly on the device.
-    //     let i = Tensor::arange_step(0f32, d_model as f32, 2f32, device)?;
-    //     let inv_freq = Tensor::new(-(10000f32.ln() / d_model as f32), device)?;
-    //     let div_term = (i * inv_freq)?.exp()?;
-
-    //     // 在维度 0 上增加一个新维度，将其形状变为 (1, d_model / 2), 现在，它变成了一个行向量（一个只有一行的矩阵）。
-    //     // 乘法 (sequence_len, 1) @ (1, d_model / 2) 的结果是一个形状为 (sequence_len, d_model / 2).
-    //     let pos_x_div = position.matmul(&div_term.unsqueeze(0)?)?;
-    //     let pe_sin = pos_x_div.sin()?;
-    //     let pe_cos = pos_x_div.cos()?;
-
-    //     // Interleave sin and cos in a more idiomatic way.
-    //     // Stack to (seq_len, d_model/2, 2) and then flatten to (seq_len, d_model).
-    //     let pe = Tensor::stack(&[pe_sin, pe_cos], 2)?.flatten_from(1)?;
-    //     Ok(pe)
-    // }
-
     fn pos_encoding(sequence_len: usize, d_model: usize, device: &Device) -> Result<Tensor> {
         // 1. 生成位置张量 [sequence_len, 1]
         let position = Tensor::arange(0u32, sequence_len as u32, device)?
@@ -127,11 +95,14 @@ impl PositionEncoding {
         let pe = Tensor::stack(&[pe_sin, pe_cos], 2)?.flatten_from(1)?;
         Ok(pe)
     }
+}
 
-    // 计算位置编码（Positional Encoding）
-    // - `sequence_len`: 序列长度（如 512）
-    // - `d_model`: 模型维度（如 512）
-    // - `device`: 计算设备（CPU/CUDA）
+impl PositionEncoding {
+    pub fn forward(&self, seq_len: usize) -> Result<Tensor> {
+        // self.embedding is of shape (max_len, d_model)
+        // We need to return the slice for the current sequence length.
+        self.embedding.narrow(0, 0, seq_len)
+    }
 }
 
 #[cfg(test)]
@@ -158,4 +129,44 @@ mod tests {
         assert_eq!(pe.shape().dims(), &[10, 8]);
         Ok(())
     }
+
+    #[test]
+    fn narrow_works() {
+        use candle_core::{Device, Tensor};
+        let a = Tensor::new(&[[0f32, 1., 2.], [3., 4., 5.], [6., 7., 8.]], &Device::Cpu).unwrap();
+
+        let b = a.narrow(0, 1, 2).unwrap();
+        assert_eq!(b.shape().dims(), &[2, 3]);
+        assert_eq!(b.to_vec2::<f32>().unwrap(), &[[3., 4., 5.], [6., 7., 8.]]);
+
+        let c = a.narrow(1, 1, 1).unwrap();
+        assert_eq!(c.shape().dims(), &[3, 1]);
+        assert_eq!(c.to_vec2::<f32>().unwrap(), &[[1.], [4.], [7.]]);
+    }
 }
+
+// fn pos_encoding(sequence_len: usize, d_model: usize, device: &Device) -> Result<Tensor> {
+//     // 在维度 1 上增加一个新维度，将其形状变为 (sequence_len, 1), 现在，它变成了一个列向量（一个只有一列的矩阵）.
+//     let position = Tensor::arange(0u32, sequence_len as u32, device)?
+//         .to_dtype(DType::F32)? //eg. shape: (4) -> [0., 1.0, 2.0, 3.0]
+//         .unsqueeze(1)?; //eg. shape: (4,1) -> [[0.],
+//     //  [1.0],
+//     //  [2.0],
+//     //  [3.0]]
+
+//     // Calculate div_term directly on the device.
+//     let i = Tensor::arange_step(0f32, d_model as f32, 2f32, device)?;
+//     let inv_freq = Tensor::new(-(10000f32.ln() / d_model as f32), device)?;
+//     let div_term = (i * inv_freq)?.exp()?;
+
+//     // 在维度 0 上增加一个新维度，将其形状变为 (1, d_model / 2), 现在，它变成了一个行向量（一个只有一行的矩阵）。
+//     // 乘法 (sequence_len, 1) @ (1, d_model / 2) 的结果是一个形状为 (sequence_len, d_model / 2).
+//     let pos_x_div = position.matmul(&div_term.unsqueeze(0)?)?;
+//     let pe_sin = pos_x_div.sin()?;
+//     let pe_cos = pos_x_div.cos()?;
+
+//     // Interleave sin and cos in a more idiomatic way.
+//     // Stack to (seq_len, d_model/2, 2) and then flatten to (seq_len, d_model).
+//     let pe = Tensor::stack(&[pe_sin, pe_cos], 2)?.flatten_from(1)?;
+//     Ok(pe)
+// }
