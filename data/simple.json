@@ -1,0 +1,51 @@
+{
+  "movies": [
+    {
+      "id": "tt0111161",
+      "title": "The Shawshank Redemption",
+      "year": 1994,
+      "genres": ["Drama"],
+      "director": "Frank Darabont",
+      "actors": ["Tim Robbins", "Morgan Freeman", "Bob Gunton"],
+      "plot": "Two imprisoned men bond over a number of years, finding solace and eventual redemption through acts of common decency.",
+      "rating": 9.3,
+      "runtime_minutes": 142,
+      "language": "English",
+      "country": "USA",
+      "awards": "Nominated for 7 Oscars. Another 19 wins & 30 nominations."
+    },
+    {
+      "id": "tt0068646",
+      "title": "The Godfather",
+      "year": 1972,
+      "genres": ["Crime", "Drama"],
+      "director": "Francis Ford Coppola",
+      "actors": ["Marlon Brando", "Al Pacino", "James Caan"],
+      "plot": "The aging patriarch of an organized crime dynasty transfers control to his reluctant son.",
+      "rating": 9.2,
+      "runtime_minutes": 175,
+      "language": "English",
+      "country": "USA",
+      "awards": "Won 3 Oscars. Another 24 wins & 29 nominations."
+    },
+    {
+      "id": "tt0468569",
+      "title": "The Dark Knight",
+      "year": 2008,
+      "genres": ["Action", "Crime", "Drama"],
+      "director": "Christopher Nolan",
+      "actors": ["Christian Bale", "Heath Ledger", "Aaron Eckhart"],
+      "plot": "When the menace known as the Joker wreaks havoc on Gotham City, Batman must accept one of the greatest psychological and physical tests of his ability to fight injustice.",
+      "rating": 9.0,
+      "runtime_minutes": 152,
+      "language": "English",
+      "country": "USA",
+      "awards": "Won 2 Oscars. Another 156 wins & 163 nominations."
+    }
+  ],
+  "metadata": {
+    "total": 3,
+    "source": "Internet Movie Database (IMDb)",
+    "license": "CC BY-NC 4.0"
+  }
+}

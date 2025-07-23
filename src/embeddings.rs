@@ -97,13 +97,13 @@ mod tests {
         let path = "./data/tokenizer.json";
         let tokenizer = Tokenizer::from_file(path).unwrap();
 
-        let encoding = tokenizer.encode("Hello world", true).unwrap();
         let vocab_size = tokenizer.get_vocab_size(true);
 
+        let encoding = tokenizer.encode("Hello world", true).unwrap();
         let token_ids = encoding.get_ids();
+        println!("TokenIDs: {:?}", token_ids);
 
         let device = Device::Cpu;
-
         let config = InputEmbeddingConfig {
             vocab_size,
             embedding_dim: 512,
@@ -112,6 +112,7 @@ mod tests {
         let varmap = VarMap::new();
         let vb = VarBuilder::from_varmap(&varmap, DType::F32, &device);
 
+        // New input embedding
         let input_embedding = InputEmbedding::new(config, vb).unwrap();
 
         let xt = Tensor::from_slice(token_ids, (token_ids.len(),), &device).unwrap();
