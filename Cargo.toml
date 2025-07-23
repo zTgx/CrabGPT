@@ -11,7 +11,8 @@ keywords = ["transformer", "candle", "llm", "rust"]
 [dependencies]
 # clap = { version = "4.5", features = ["derive"] }
 anyhow = "1.0"
-candle-core = { version = "0.9.1", features = ["cuda"] }
+candle-core = { version = "0.9.1" }
+# candle-core = { version = "0.9.1", features = ["cuda"] }
 # candle-transformers = { version = "0.9.1" }
 candle-nn = "0.9.1"
 tokenizers = { version = "0.21.2", features = ["http"] }
