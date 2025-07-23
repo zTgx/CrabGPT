@@ -83,3 +83,40 @@ impl Module for InputEmbedding {
         // Ok(token_embeddings)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use candle_core::DType;
+    use candle_core::Device;
+    use candle_nn::VarMap;
+    use tokenizers::Tokenizer;
+
+    #[test]
+    fn embedding_works() {
+        let path = "./data/tokenizer.json";
+        let tokenizer = Tokenizer::from_file(path).unwrap();
+
+        let encoding = tokenizer.encode("Hello world", true).unwrap();
+        let vocab_size = tokenizer.get_vocab_size(true);
+
+        let token_ids = encoding.get_ids();
+
+        let device = Device::Cpu;
+
+        let config = InputEmbeddingConfig {
+            vocab_size,
+            embedding_dim: 512,
+            max_position_embeddings: vocab_size,
+        };
+        let varmap = VarMap::new();
+        let vb = VarBuilder::from_varmap(&varmap, DType::F32, &device);
+
+        let input_embedding = InputEmbedding::new(config, vb).unwrap();
+
+        let xt = Tensor::from_slice(token_ids, (token_ids.len(),), &device).unwrap();
+        let embedding = input_embedding.forward(&xt).unwrap();
+
+        println!("Input Embedding shape: {:#?}", embedding);
+    }
+}
