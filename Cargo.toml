@@ -1,12 +1,12 @@
 [package]
-name = "transfomer-rust"
+name = "transformer-rust"
 version = "0.1.0"
 edition = "2024"
 description = "Transformer Architecture with Rust and Candle"
 license = "MIT"
-repository = "https://github.com/zTgx/CrabGPT"
+repository = "https://github.com/zTgx/transformer-rust"
 readme = "README.md"
-keywords = ["llama", "inference", "llm", "rust"]
+keywords = ["transformer", "candle", "llm", "rust"]
 
 [dependencies]
 # clap = { version = "4.5", features = ["derive"] }

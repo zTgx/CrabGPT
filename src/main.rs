@@ -1,6 +1,6 @@
 use candle_core::{DType, Device, Result, Tensor};
 use candle_nn::{Module, ModuleT, VarBuilder, VarMap};
-use transfomer_rust::{
+use transformer_rust::{
     embeddings::{InputEmbedding, InputEmbeddingConfig},
     transformer::{DecoderBlock, EncodeBlock},
 };

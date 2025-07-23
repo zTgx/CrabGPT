@@ -1837,7 +1837,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "transfomer-rust"
+name = "transformer-rust"
 version = "0.1.0"
 dependencies = [
  "anyhow",
