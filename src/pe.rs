@@ -56,28 +56,25 @@ impl Default for PositionEncodingConfig {
 #[derive(Debug, Clone)]
 pub struct PositionEncoding {
     pub config: PositionEncodingConfig,
-    pub pos_embedding: Tensor,
+    pub embedding: Tensor,
 }
 
 impl PositionEncoding {
     pub fn new(config: PositionEncodingConfig, device: &Device) -> Result<Self> {
-        let pos_embedding = PositionEncoding::pos_encoding(
+        let embedding = PositionEncoding::pos_encoding(
             config.max_position_embeddings,
             config.embedding_dim,
             device,
         )?;
-        println!("pos_embedding shape: {:#?}", pos_embedding.shape());
+        println!("PE embedding shape: {:#?}", embedding.shape());
 
-        Ok(Self {
-            config,
-            pos_embedding,
-        })
+        Ok(Self { config, embedding })
     }
 
     pub fn forward(&self, seq_len: usize) -> Result<Tensor> {
-        // self.pos_embedding is of shape (max_len, d_model)
+        // self.embedding is of shape (max_len, d_model)
         // We need to return the slice for the current sequence length.
-        self.pos_embedding.narrow(0, 0, seq_len)
+        self.embedding.narrow(0, 0, seq_len)
     }
 
     // fn pos_encoding(sequence_len: usize, d_model: usize, device: &Device) -> Result<Tensor> {

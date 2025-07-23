@@ -6,12 +6,15 @@ use {
 
 #[derive(Debug, Clone)]
 pub struct InputEmbeddingConfig {
+    // vocabulary size
     pub vocab_size: usize,
+
+    // The dimension of the vector after each token is embedded
     pub embedding_dim: usize,
+
     pub max_position_embeddings: usize,
 }
 
-/// Embedding input for the model.
 #[derive(Debug, Clone)]
 pub struct InputEmbedding {
     token_embedding_layer: Embedding,
@@ -20,18 +23,26 @@ pub struct InputEmbedding {
 
 impl InputEmbedding {
     pub fn new(config: InputEmbeddingConfig, vb: VarBuilder) -> Result<Self> {
+        println!("Embedding Config: {:#?}", config);
+
         let token_embedding_layer = embedding(
             config.vocab_size,
             config.embedding_dim,
             vb.pp("token_embeddings"),
         )?;
+        println!(
+            "Token embedding layer shape: {:#?}",
+            token_embedding_layer.embeddings().shape()
+        );
 
-        let pos_config = PositionEncodingConfig::new(
+        let pe_config = PositionEncodingConfig::new(
             config.max_position_embeddings,
             config.embedding_dim,
             crate::pe::PositionEmbeddingType::Absolute,
         );
-        let pos_encoding_layer = PositionEncoding::new(pos_config, vb.device())?;
+        println!("PE config: {:#?}", pe_config);
+
+        let pos_encoding_layer = PositionEncoding::new(pe_config, vb.device())?;
 
         Ok(Self {
             token_embedding_layer,
@@ -41,19 +52,29 @@ impl InputEmbedding {
 }
 
 impl Module for InputEmbedding {
+    // Look up the embedding matrix through the token ID
     fn forward(&self, xs: &Tensor) -> Result<Tensor> {
+        println!("\n>>>>>>>>>>>>>>>>>>> InputEmbedding <<<<<<<<<<<<<<<<<<<<<<");
+
         // Get the sequence length from the input tensor shape
-        let (_batch_size, seq_len) = xs.dims2()?;
-        println!("BatchSize: {}, seqLen: {}", _batch_size, seq_len);
+        let (batch_size, seq_len) = xs.dims2()?;
+        println!("BatchSize: {}, seqLen: {}", batch_size, seq_len);
 
         // Get token embeddings and positional embeddings
         let token_embeddings = self.token_embedding_layer.forward(xs)?;
-        println!("token_embeddings shape: {:#?}", token_embeddings.shape());
+        println!("Token embeddings shape: {:#?}", token_embeddings.shape());
 
         let pos_embeddings = self.pos_encoding_layer.forward(seq_len)?;
-        println!("pos_embeddings shape: {:#?}", pos_embeddings.shape());
+        println!("PE embeddings shape: {:#?}", pos_embeddings.shape());
 
-        // Add them together
-        token_embeddings.broadcast_add(&pos_embeddings)
+        println!(">>>>>>>>>>>>>>>>>>> InputEmbedding <<<<<<<<<<<<<<<<<<<<<<\n");
+
+        // Positional embeddings are added to the token embedding vector to create the input embeddings for an LLM.
+        // Eg. For token A
+        // Token embedding: [1.0, 1.0, 1.0]
+        // PE    embedding: [1.1, 1.2, 1.3]
+        // Input embedding: = [1.0, 1.0, 1.0] + [1.1, 1.2, 1.3]
+        let input_embedding = token_embeddings.broadcast_add(&pos_embeddings);
+        input_embedding
     }
 }
