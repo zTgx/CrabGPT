@@ -113,8 +113,8 @@ mod tests {
     #[test]
     fn test_pos_encoding_shape() -> Result<()> {
         let device = Device::Cpu;
-        let sequence_len = 10;
-        let d_model = 768;
+        let sequence_len = 768;
+        let d_model = 10;
 
         let pe = PositionEncoding::pos_encoding(sequence_len, d_model, &device)?;
         assert_eq!(pe.shape().dims2().unwrap(), (sequence_len, d_model));
@@ -127,6 +127,21 @@ mod tests {
         let device = Device::Cpu;
         let pe = PositionEncoding::pos_encoding(10, 8, &device)?;
         assert_eq!(pe.shape().dims(), &[10, 8]);
+        Ok(())
+    }
+
+    #[test]
+    fn forward_works() -> Result<()> {
+        let device = Device::Cpu;
+        let config = PositionEncodingConfig::default();
+        let pe = PositionEncoding::new(config.clone(), &device)?;
+
+        let xt = pe.forward(config.max_position_embeddings)?;
+        assert_eq!(
+            xt.shape().dims(),
+            &[config.max_position_embeddings, config.embedding_dim]
+        );
+
         Ok(())
     }
 
