@@ -51,7 +51,10 @@ impl Module for TokenEmbedding {
         let t = Tensor::new(dmodel_sqrt, xs.device())?;
 
         // In the embedding layers, we multiply those weights by √dmodel.
-        self.embedding.forward(xs)?.broadcast_mul(&t)
+        let token_embeddings = self.embedding.forward(xs)?.broadcast_mul(&t)?;
+        println!("Multiply those weights by √dmodel: {}", token_embeddings);
+
+        Ok(token_embeddings)
     }
 }
 
@@ -128,6 +131,7 @@ impl PositionEncoding {
         let position = Tensor::arange(0u32, sequence_len as u32, device)?
             .to_dtype(DType::F32)?
             .unsqueeze(1)?; // [sequence_len, 1]
+        println!("position: {}", position);
 
         // 2. 生成频率因子 [d_model / 2]
         let i = Tensor::arange_step(0f32, d_model as f32, 2f32, device)?.to_dtype(DType::F32)?; // [d_model / 2]
@@ -142,6 +146,9 @@ impl PositionEncoding {
         // 5. 计算 sin 和 cos
         let pe_sin = pos_x_div.sin()?;
         let pe_cos = pos_x_div.cos()?;
+
+        println!("pe_sin: {}", pe_sin);
+        println!("pe_cos: {}", pe_cos);
 
         // 6. 交错合并 sin 和 cos [sequence_len, d_model]
         let pe = Tensor::stack(&[pe_sin, pe_cos], 2)?.flatten_from(1)?;
@@ -216,6 +223,25 @@ mod tests {
     }
 
     #[test]
+    fn token_embedding_forward_works() -> Result<()> {
+        let config = TokenEmbeddingConfig::new(3, 3);
+
+        let varmap = VarMap::new();
+        let vb = VarBuilder::from_varmap(&varmap, DType::F32, &Device::Cpu);
+
+        let token = TokenEmbedding::new(config, vb)?;
+        println!("token embedding: {}", token.embedding.embeddings());
+
+        let xs = Tensor::arange(0_u32, 2_u32, &Device::Cpu)?;
+        println!("xs: {xs}");
+
+        let x = token.forward(&xs)?;
+        println!("x: {x}");
+
+        Ok(())
+    }
+
+    #[test]
     fn token_embedding_works() {
         let path = "./data/tokenizer.json";
         let tokenizer = Tokenizer::from_file(path).unwrap();
@@ -265,6 +291,7 @@ mod pe_tests {
     fn test_pos_encoding() -> Result<()> {
         let device = Device::Cpu;
         let pe = PositionEncoding::pos_encoding(10, 8, &device)?;
+        println!("pe: {}", pe);
         assert_eq!(pe.shape().dims(), &[10, 8]);
         Ok(())
     }
@@ -296,5 +323,19 @@ mod pe_tests {
         let c = a.narrow(1, 1, 1).unwrap();
         assert_eq!(c.shape().dims(), &[3, 1]);
         assert_eq!(c.to_vec2::<f32>().unwrap(), &[[1.], [4.], [7.]]);
+    }
+
+    #[test]
+    fn stack_works() -> Result<()> {
+        let a = Tensor::zeros((2, 3), DType::F32, &Device::Cpu)?;
+        let b = Tensor::zeros((2, 3), DType::F32, &Device::Cpu)?;
+
+        let c = Tensor::stack(&[&a, &b], 0)?;
+        assert_eq!(c.shape().dims(), &[2, 2, 3]);
+
+        let c = Tensor::stack(&[&a, &b], 2)?;
+        assert_eq!(c.shape().dims(), &[2, 3, 2]);
+
+        Ok(())
     }
 }
