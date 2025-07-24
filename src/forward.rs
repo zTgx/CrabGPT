@@ -1,13 +1,12 @@
 use {
-    crate::activation::LayerActivation,
     candle_core::{Module, Result, Tensor},
-    candle_nn::{Dropout, LayerNorm, Linear, ModuleT, VarBuilder, linear_b},
+    candle_nn::{Dropout, LayerNorm, Linear, ModuleT, VarBuilder, linear_b, activation::Activation},
 };
 
 #[derive(Clone, Debug)]
 pub enum FFLayer {
     Linear(Linear),
-    GELU(LayerActivation),
+    GELU(Activation),
     Dropout(Dropout),
     LayerNorm(LayerNorm),
 }
@@ -37,7 +36,7 @@ impl FeedForward {
                 true,
                 vb.pp("first_layer"),
             )?),
-            FFLayer::GELU(LayerActivation::Activation(candle_nn::Activation::Gelu)),
+            FFLayer::GELU(Activation::Gelu),
             FFLayer::Linear(linear_b(
                 4_usize * in_dim,
                 in_dim,
