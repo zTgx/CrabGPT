@@ -33,7 +33,7 @@ impl EncodeBlock {
         )?;
 
         let ff = FeedForward::new(in_dim, drop_p, vb.pp("ff"))?;
-        
+
         Ok(Self { attn, ff, ln1, ln2 })
     }
 }

@@ -26,7 +26,6 @@ fn main() -> Result<()> {
     let embed_config = TokenEmbeddingConfig {
         vocab_size,
         embedding_dim,
-        max_position_embeddings,
     };
     let src_embedding = TokenEmbedding::new(embed_config.clone(), vb.pp("src_embeddings"))?;
     let tgt_embedding = TokenEmbedding::new(embed_config, vb.pp("tgt_embeddings"))?;

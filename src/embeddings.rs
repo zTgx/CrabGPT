@@ -11,8 +11,15 @@ pub struct TokenEmbeddingConfig {
 
     // The dimension of the vector after each token is embedded
     pub embedding_dim: usize,
+}
 
-    pub max_position_embeddings: usize,
+impl TokenEmbeddingConfig {
+    pub fn new(vocab_size: usize, embedding_dim: usize) -> Self {
+        Self {
+            vocab_size,
+            embedding_dim,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -188,7 +195,28 @@ mod tests {
     use tokenizers::Tokenizer;
 
     #[test]
-    fn embedding_works() {
+    fn token_embeddings_simple_works() -> Result<()> {
+        let vocab_size = 3_usize;
+        let dim = 12_usize;
+
+        let config = TokenEmbeddingConfig::new(3, 12);
+
+        let varmap = VarMap::new();
+        let vb = VarBuilder::from_varmap(&varmap, DType::F32, &Device::Cpu);
+
+        let token = TokenEmbedding::new(config, vb)?;
+        // println!("token embedding: {}", token.embedding.embeddings());
+
+        assert_eq!(
+            token.embedding.embeddings().shape().dims2()?,
+            (vocab_size, dim)
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn token_embedding_works() {
         let path = "./data/tokenizer.json";
         let tokenizer = Tokenizer::from_file(path).unwrap();
 
@@ -202,7 +230,6 @@ mod tests {
         let config = TokenEmbeddingConfig {
             vocab_size,
             embedding_dim: 512,
-            max_position_embeddings: vocab_size,
         };
         let varmap = VarMap::new();
         let vb = VarBuilder::from_varmap(&varmap, DType::F32, &device);
